@@ -47,6 +47,9 @@ async function run() {
         const bookingCollection = client.db('doctorsPortal').collection('bookings');
         // This collection is for users 
         const usersCollection = client.db('doctorsPortal').collection('users');
+        // this one is for doctors collection 
+        const doctorsCollection = client.db('doctorsPortal').collection('doctors');
+
 
 
         // this is not the best practice.. use aggregate to query multiple collection and then merge data 
@@ -77,6 +80,16 @@ async function run() {
 
             res.send(options)
         })
+
+
+        // speciality section 
+
+        app.get('/appointmentSpeciality', async (req, res) => {
+            const query = {};
+            const result = await appointmentOptionsCollection.find(query).project({ name: 1 }).toArray();
+            res.send(result);
+        })
+
 
         // posting data to backend 
 
@@ -171,6 +184,22 @@ async function run() {
             }
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
+        });
+
+        // this one is for doctors part  
+        // adding doctor 
+
+        app.post('/doctors', async (req, res) => {
+            const doctor = req.body;
+            const result = await doctorsCollection.insertOne(doctor);
+            res.send(result)
+        })
+
+        // getting doctors data 
+        app.get('/doctors', async (req, res) => {
+            const query = {};
+            const doctors = await doctorsCollection.find(query).toArray();
+            res.send(doctors);
         })
 
     }
