@@ -192,7 +192,7 @@ async function run() {
         app.post('/doctors', async (req, res) => {
             const doctor = req.body;
             const result = await doctorsCollection.insertOne(doctor);
-            res.send(result)
+            res.send(result);
         })
 
         // getting doctors data 
@@ -200,6 +200,14 @@ async function run() {
             const query = {};
             const doctors = await doctorsCollection.find(query).toArray();
             res.send(doctors);
+        })
+
+        // deleting doctor api 
+        app.delete('/doctors/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await doctorsCollection.deleteOne(filter);
+            res.send(result);
         })
 
     }
