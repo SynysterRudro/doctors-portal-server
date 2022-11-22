@@ -122,6 +122,16 @@ async function run() {
             res.send(bookings);
         })
 
+
+        // getting specific bookings 
+
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingCollection.findOne(query);
+            res.send(booking);
+        })
+
         app.post('/bookings', async (req, res) => {
             const bookings = req.body;
             // console.log(bookings);
@@ -147,7 +157,7 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '5h' });
                 return res.send({ accessToken: token })
             }
 
@@ -193,6 +203,22 @@ async function run() {
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         });
+
+
+        // temporary to update price price field on appointment option -- put na lekhe eikhane get o kora jai but kora uchit na 
+
+        /*         app.get('/addprice', async (req, res) => {
+                    const filter = {};
+                    const options = { upsert: true };
+                    const updatedDoc = {
+                        $set: {
+                            price: 50
+                        }
+                    }
+                    const result = await appointmentOptionsCollection.updateMany(filter, updatedDoc, options);
+                    res.send(result);
+        
+                }) */
 
         // this one is for doctors part  
         // adding doctor 
