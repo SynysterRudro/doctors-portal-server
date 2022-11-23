@@ -6,6 +6,9 @@ const jwt = require('jsonwebtoken');
 // dotenv 
 require('dotenv').config();
 
+// This is your test secret API key.
+const stripe = require("stripe")(process.env.STRIPE_KEY);
+
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -49,6 +52,9 @@ async function run() {
         const usersCollection = client.db('doctorsPortal').collection('users');
         // this one is for doctors collection 
         const doctorsCollection = client.db('doctorsPortal').collection('doctors');
+
+        // payment related collection 
+        const paymentsCollection = client.db('doctorsPortal').collection('payments');
 
 
 
@@ -150,6 +156,48 @@ async function run() {
             const results = await bookingCollection.insertOne(bookings);
             res.send(results);
         });
+
+
+        // ------------stripe payment option ------------------
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: "usd",
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+
+
+        })
+
+
+        // ---------saving payment info to db ------------
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const results = await paymentsCollection.insertOne(payment);
+            const id = payment.bookingId;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedResult = await bookingCollection.updateOne(filter, updatedDoc)
+            res.send(results);
+        })
+
 
         // jwt part 
         app.get('/jwt', async (req, res) => {
