@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 
+
+
 const jwt = require('jsonwebtoken');
 
 // dotenv 
@@ -20,11 +22,79 @@ app.use(express.json());
 
 
 
+// importing nodemailer
+const nodemailer = require('nodemailer');
+
+// mailgun 
+const mg = require('nodemailer-mailgun-transport');
+
+
+// nodemailer code part 
+
+function sendBookingEmail(bookings) {
+
+    const { email, treatment, appointmentDate, slot } = bookings;
+
+
+    // ----------------sendgrid part -----------------
+
+    /*      let transporter = nodemailer.createTransport({
+            host: 'smtp.sendgrid.net',
+            port: 587,
+            auth: {
+                user: "apikey",
+                pass: process.env.SENDGRID_API_KEY
+            }
+        })
+     */
+
+    //  mailgun part start 
+    // transporter 
+
+    const auth = {
+        auth: {
+            api_key: process.env.MAILGUN_API_KEY,
+            domain: process.env.EMAIL_SEND_DOMAIN
+        }
+    }
+
+    const transporter = nodemailer.createTransport(mg(auth));
+
+    transporter.sendMail({
+        from: "rudrosingh82@gmail.com", // verified sender email
+        to: email, // recipient email
+        subject: `Your treatment for ${treatment} is confirmed`, // Subject line
+        text: "Hello world!", // plain text body
+        html: `
+         <h3>Your appointment is confirmed</h3>
+         <div>
+         <p>Your appointment for treatment ${treatment}</p>
+         <p>Please visit us on ${appointmentDate} at ${slot}</p>
+         <p>Thanks from doctors portal</p>
+         </div>
+         `, // html body
+    }, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+
+
+
+
+}
+
+
+
+
 // connecting 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.akihfew.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
 
 // verifying jwt --middleware(creating custom middleware)
 function verifyJWT(req, res, next) {
@@ -154,6 +224,10 @@ async function run() {
             }
 
             const results = await bookingCollection.insertOne(bookings);
+
+            // send email about appointment confirmation 
+            sendBookingEmail(bookings);
+
             res.send(results);
         });
 
